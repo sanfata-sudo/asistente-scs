@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente SCS - Carrera Profesional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root {
+  --primary: #1a4480;
+  --primary-dark: #143666;
+  --primary-light: #2c5aa0;
+  --primary-bg: #ebf0f9;
+  --primary-soft: #f4f7fc;
+  --warn: #b91c1c;
+  --warn-bg: #fef2f2;
+  --ok: #15803d;
+  --ok-bg: #f0fdf4;
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --muted: #475569;
+  --soft: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --shadow: 0 1px 3px rgba(15,23,42,0.06);
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body { font-family: 'Source Sans 3', system-ui, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5; }
+.topbar { height: 6px; background: linear-gradient(90deg, var(--primary-dark), var(--primary), var(--primary-light)); }
+.mode-banner { padding: 6px 28px; font-size: 11.5px; font-weight: 600; text-align: center; }
+.mode-banner.admin { background: var(--primary-bg); color: var(--primary-dark); }
+.mode-banner.user { background: var(--ok-bg); color: var(--ok); }
+.header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; }
+.header-brand { display: flex; align-items: center; gap: 14px; }
+.header-logo { height: 44px; min-width: 44px; background: var(--primary); border-radius: var(--radius); display: grid; place-items: center; color: white; padding: 4px 8px; overflow: hidden; }
+.header-logo.has-image { background: white; border: 1px solid var(--border); padding: 2px 6px; }
+.header-logo img { max-height: 38px; max-width: 140px; display: block; object-fit: contain; }
+.header-titles h1 { font-family: 'Source Serif 4', serif; font-size: 16px; font-weight: 600; margin: 0; line-height: 1.25; }
+.header-titles .org { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+.header-titles .sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; font-weight: 500; }
+.header-status { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--soft); }
+.status-dot.ok { background: var(--ok); }
+.status-dot.warn { background: #ce8c1c; }
+.app { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 102px); min-height: 600px; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-scroll { overflow-y: auto; flex: 1; padding: 22px; }
+.section { margin-bottom: 26px; }
+.section-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+.section-num { background: var(--primary); color: white; width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; margin-right: 6px; }
+.field-help { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+.field-help.ok { color: var(--ok); font-weight: 500; }
+input[type=text], input[type=password], select, textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius);
+  padding: 9px 11px; font-family: inherit; font-size: 13px; color: var(--ink);
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,68,128,0.12); }
+.api-row { display: flex; gap: 6px; }
+.api-row input { flex: 1; }
+.btn { background: var(--primary); color: white; border: none; border-radius: var(--radius); padding: 9px 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn:hover { background: var(--primary-dark); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border-strong); }
+.btn-ghost:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+.btn-warn { background: transparent; color: var(--warn); border: 1px solid var(--border-strong); }
+.btn-warn:hover { background: var(--warn-bg); border-color: var(--warn); }
+.btn-block { width: 100%; }
+.upload-stack { display: flex; flex-direction: column; gap: 8px; }
+.dropzone { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 20px 14px; text-align: center; color: var(--muted); font-size: 13px; cursor: pointer; background: var(--primary-soft); }
+.dropzone:hover, .dropzone.drag { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
+.dropzone-title { font-weight: 600; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
+.dropzone-hint { font-size: 11.5px; color: var(--muted); }
+.upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.upload-actions .btn-ghost { font-size: 12px; padding: 8px; }
+.doc-list { margin-top: 12px; display: flex; flex-direction: column; gap: 5px; max-height: 240px; overflow-y: auto; }
+.doc-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12.5px; }
+.doc-icon { width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; }
+.doc-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-size { color: var(--soft); font-size: 10.5px; }
+.doc-remove { border: none; background: transparent; color: var(--soft); cursor: pointer; padding: 2px; display: flex; }
+.doc-remove:hover { color: var(--warn); }
+.stats { margin-top: 12px; padding: 10px 12px; background: var(--primary-soft); border: 1px solid var(--primary-bg); border-radius: var(--radius); font-size: 11.5px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; }
+.stats > span { color: var(--muted); }
+.stats > strong { color: var(--primary); font-weight: 700; }
+.logo-upload-row { display: flex; gap: 6px; align-items: center; }
+.logo-preview { width: 56px; height: 36px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); display: grid; place-items: center; flex-shrink: 0; overflow: hidden; color: var(--soft); font-size: 10px; }
+.logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.export-card { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; padding: 14px 16px; border-radius: var(--radius); margin-top: 10px; }
+.export-card h3 { margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.export-card p { font-size: 11.5px; line-height: 1.45; margin: 0 0 12px; opacity: 0.92; }
+.export-card .btn-export { width: 100%; background: white; color: var(--primary-dark); padding: 9px 12px; font-weight: 700; font-size: 13px; }
+.chat { display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+.chat-header { padding: 14px 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.chat-title { font-family: 'Source Serif 4', serif; font-size: 16px; font-weight: 600; margin: 0; }
+.chat-meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.messages { flex: 1; overflow-y: auto; padding: 26px 32px 12px; }
+.empty-state { max-width: 720px; margin: 8px auto; }
+.welcome-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow); }
+.welcome-eyebrow { font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.welcome-title { font-family: 'Source Serif 4', serif; font-size: 26px; font-weight: 500; margin: 0 0 10px; line-height: 1.2; }
+.welcome-intro { font-size: 14.5px; color: var(--muted); line-height: 1.6; margin: 0 0 22px; max-width: 580px; }
+.steps { display: grid; gap: 12px; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start; padding: 12px 14px; background: var(--primary-soft); border: 1px solid var(--primary-bg); border-radius: var(--radius); }
+.step.done { background: var(--ok-bg); border-color: #c5e8ce; }
+.step-num { background: var(--primary); color: white; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+.step.done .step-num { background: var(--ok); }
+.step-body strong { display: block; font-size: 14px; color: var(--ink); margin-bottom: 2px; }
+.step-body span { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.examples-block { margin-top: 24px; }
+.examples-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.examples { display: grid; gap: 8px; }
+.example { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 14px; cursor: pointer; font-size: 13.5px; }
+.example:hover { border-color: var(--primary); background: var(--primary-soft); }
+.msg { max-width: 760px; margin: 0 auto 22px; display: flex; flex-direction: column; }
+.msg-role { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
+.msg-user .msg-role { color: var(--primary); }
+.msg-content { font-size: 14.5px; line-height: 1.65; }
+.msg-content p { margin: 0 0 10px; }
+.msg-user .msg-content { background: var(--surface); padding: 14px 18px; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+.msg-error .msg-content { background: var(--warn-bg); border: 1px solid #fca5a5; color: var(--warn); padding: 12px 16px; border-radius: var(--radius); font-size: 13.5px; }
+.sources { margin-top: 12px; padding: 10px 14px; background: var(--primary-soft); border: 1px solid var(--primary-bg); border-radius: var(--radius); font-size: 12px; }
+.sources-title { font-weight: 600; color: var(--primary); text-transform: uppercase; font-size: 10.5px; margin-bottom: 6px; }
+.sources-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.source-tag { background: white; border: 1px solid var(--primary-bg); border-radius: 4px; padding: 3px 8px; font-size: 11.5px; color: var(--primary-dark); }
+.input-bar { padding: 14px 32px 22px; background: var(--bg); border-top: 1px solid var(--border); }
+.input-wrap { max-width: 760px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 4px; display: flex; align-items: flex-end; gap: 4px; }
+.input-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,68,128,0.1); }
+#userInput { flex: 1; border: none; background: transparent; padding: 11px 12px; font-family: inherit; font-size: 14px; resize: none; min-height: 24px; max-height: 200px; line-height: 1.5; }
+#userInput:focus { outline: none; }
+.send-btn { width: 38px; height: 38px; border-radius: var(--radius); background: var(--primary); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.send-btn:hover { background: var(--primary-dark); }
+.input-meta { max-width: 760px; margin: 8px auto 0; display: flex; justify-content: space-between; font-size: 11.5px; color: var(--soft); }
+.typing { display: inline-flex; gap: 4px; padding: 4px 0; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
+.modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; max-width: 560px; width: 90%; max-height: 84vh; overflow-y: auto; border-top: 4px solid var(--primary); }
+.modal h2 { font-family: 'Source Serif 4', serif; font-size: 22px; margin: 0 0 14px; }
+.modal p { font-size: 13.5px; line-height: 1.6; color: var(--muted); margin: 0 0 12px; }
+.modal code { background: var(--primary-soft); border: 1px solid var(--primary-bg); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace; color: var(--primary-dark); }
+.modal ol, .modal ul { font-size: 13.5px; line-height: 1.7; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: white; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; opacity: 0; transition: all 0.25s; z-index: 200; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.warn { background: var(--warn); }
+.toast.ok { background: var(--ok); }
+.loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: none; align-items: center; justify-content: center; z-index: 300; flex-direction: column; gap: 14px; }
+.loading-overlay.show { display: flex; }
+.loading-spinner { width: 36px; height: 36px; border: 3px solid var(--primary-bg); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.readonly-badge { display: inline-block; background: var(--ok-bg); color: var(--ok); border: 1px solid #c5e8ce; border-radius: 3px; padding: 1px 7px; font-size: 10px; font-weight: 700; margin-left: 6px; }
+@media (max-width: 960px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<script id="embedded-data" type="application/json">null</script>
+
+<div class="topbar"></div>
+<div class="mode-banner" id="modeBanner" style="display:none;"></div>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo" id="headerLogo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4z"/>
+      </svg>
+    </div>
+    <div class="header-titles">
+      <h1>Asistente de procedimientos · Carrera profesional</h1>
+      <div class="org" id="headerOrg">Complejo Hospitalario Universitario de Canarias</div>
+      <div class="sub" id="headerSub">Servicio Canario de la Salud · IA: Google Gemini</div>
+    </div>
+  </div>
+  <div class="header-status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Configuración pendiente</span>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-scroll">
+
+      <div class="section">
+        <div class="section-label">
+          <span><span class="section-num">1</span>Clave de API</span>
+          <a href="#" id="helpLink" style="color:var(--ok); text-decoration:none; font-weight:600; font-size:11px;">conseguir clave gratis</a>
+        </div>
+        <div class="api-row">
+          <input type="password" id="apiKey" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+          <button class="btn" id="saveKey">Guardar</button>
+        </div>
+        <div class="field-help" id="keyStatus">No configurada · clave gratuita de Google AI Studio.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">
+          <span><span class="section-num">2</span>Documentación<span id="readonlyBadge" class="readonly-badge" style="display:none;">solo lectura</span></span>
+          <span id="docCount" style="color:var(--soft); font-weight:600; text-transform:none; font-size:11px;"></span>
+        </div>
+
+        <div id="adminUploadZone" class="upload-stack">
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-title">Arrastra archivos o carpetas</div>
+            <div class="dropzone-hint">PDF, Word (.docx), TXT, MD</div>
+          </div>
+          <div class="upload-actions">
+            <button class="btn-ghost btn" id="pickFiles">Archivos</button>
+            <button class="btn-ghost btn" id="pickFolder">Carpeta</button>
+          </div>
+          <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.markdown,.docx" style="display:none;">
+          <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+        </div>
+
+        <div id="userReadonlyNotice" style="display:none; padding: 10px 12px; background: var(--ok-bg); border: 1px solid #c5e8ce; border-radius: var(--radius); font-size: 12px; color: var(--ok);">
+          Documentación oficial precargada. Para añadir documentos, contacta con el administrador.
+        </div>
+
+        <div class="doc-list" id="docList"></div>
+        <div class="stats" id="stats" style="display:none;">
+          <span>Documentos</span><strong id="statDocs">0</strong>
+          <span>Fragmentos indexados</span><strong id="statChunks">0</strong>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><span><span class="section-num">3</span>Modelo</span></div>
+        <select id="model">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash · equilibrado (recomendado)</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite · mayor cuota diaria</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro · máxima precisión</option>
+        </select>
+        <div class="field-help">Si te sale "cuota agotada", cambia a Flash-Lite.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label"><span><span class="section-num">4</span>Personalización</span></div>
+        <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:5px;">Logotipo</label>
+        <div class="logo-upload-row">
+          <div class="logo-preview" id="logoPreview">sin logo</div>
+          <button class="btn-ghost btn" id="uploadLogo" style="font-size:12px; padding:8px 10px; flex:1;">Subir imagen</button>
+          <button class="btn-ghost btn" id="removeLogo" style="font-size:12px; padding:8px 10px; display:none;">Quitar</button>
+        </div>
+        <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml" style="display:none;">
+        <div class="field-help">PNG, JPG o SVG, máximo 500 KB.</div>
+        <label style="font-size:12px; color:var(--muted); display:block; margin: 14px 0 5px;">Nombre del centro</label>
+        <input type="text" id="orgName" placeholder="Complejo Hospitalario Universitario de Canarias">
+        <label style="font-size:12px; color:var(--muted); display:block; margin: 14px 0 5px;">Servicio o unidad</label>
+        <input type="text" id="orgUnit" placeholder="Ej: Servicio de Selección, Evaluación y Formación">
+      </div>
+
+      <div class="section" id="exportSection" style="display:none;">
+        <div class="section-label"><span><span class="section-num">5</span>Distribución al equipo</span></div>
+        <div class="export-card">
+          <h3>Exportar versión para el equipo</h3>
+          <p>Genera un HTML con la documentación incrustada. Tus compañeros sólo necesitarán meter su clave Gemini gratuita.</p>
+          <button class="btn btn-export" id="exportBtn">Generar archivo del equipo</button>
+        </div>
+      </div>
+
+      <div class="section" style="border-top: 1px solid var(--border); padding-top: 20px;">
+        <button class="btn-ghost btn btn-block" id="clearChat" style="margin-bottom:6px;">Limpiar conversación</button>
+        <button class="btn-warn btn btn-block" id="resetAll">Borrar mis datos locales</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="chat-header">
+      <h2 class="chat-title">Consulta de procedimientos</h2>
+      <div class="chat-meta" id="contextMeta">Sin documentos cargados</div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="userInput" placeholder="Escribe tu pregunta..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" title="Enviar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="input-meta">
+        <span>Enter para enviar · Shift+Enter para nueva línea</span>
+        <span id="status"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="helpModal">
+  <div class="modal">
+    <h2>Cómo conseguir tu clave gratuita</h2>
+    <p>Esta aplicación usa <strong>Google AI Studio (Gemini)</strong>, con capa gratuita generosa <strong>sin tarjeta de crédito</strong>.</p>
+    <ol>
+      <li>Entra en <strong>aistudio.google.com/apikey</strong> con tu cuenta de Google.</li>
+      <li>Pulsa <strong>"Create API key"</strong> y selecciona o crea un proyecto.</li>
+      <li>Copia la clave (empieza por <code>AIzaSy</code>) y pégala arriba.</li>
+      <li>Pulsa <strong>Guardar</strong>.</li>
+    </ol>
+    <p><strong>Importante sobre privacidad:</strong> en la capa gratuita Google puede usar las consultas para mejorar sus modelos. No incluyas datos personales identificables en tus preguntas.</p>
+    <button class="btn" id="closeHelp">Entendido</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div id="loadingText" style="font-weight: 500;">Procesando…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// ============================================================
+// 1. CONFIGURACIÓN GLOBAL
+// ============================================================
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+var STORAGE_KEYS = {
+  API_KEY: "scs_gemini_key",
+  MODEL: "scs_gemini_model",
+  DOCS: "scs_admin_docs",
+  CHAT: "scs_chat",
+  CONFIG: "scs_config"
+};
+
+var VALID_EXT = ["pdf", "txt", "md", "markdown", "docx"];
+var CHUNK_SIZE = 600;
+var CHUNK_OVERLAP = 80;
+var TOP_K = 10;
+var DEFAULT_ORG = "Complejo Hospitalario Universitario de Canarias";
+
+// ============================================================
+// 2. DETECCIÓN DE MODO
+// ============================================================
+var EMBEDDED = null;
+try {
+  var rawEmbed = document.getElementById("embedded-data").textContent.trim();
+  if (rawEmbed && rawEmbed !== "null") {
+    EMBEDDED = JSON.parse(rawEmbed);
+  }
+} catch (e) {
+  console.warn("No se pudieron leer datos embebidos:", e);
+}
+var IS_ADMIN = !EMBEDDED || !EMBEDDED.docs || EMBEDDED.docs.length === 0;
+
+// ============================================================
+// 3. ESTADO
+// ============================================================
+var state = {
+  apiKey: localStorage.getItem(STORAGE_KEYS.API_KEY) || "",
+  model: localStorage.getItem(STORAGE_KEYS.MODEL) || "gemini-2.5-flash",
+  docs: [],
+  chunks: [],
+  messages: [],
+  config: { org: DEFAULT_ORG, orgUnit: "", logo: "" },
+  loading: false
+};
+
+try {
+  state.messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHAT) || "[]");
+} catch (e) { state.messages = []; }
+
+if (IS_ADMIN) {
+  try {
+    var savedConfig = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG) || "{}");
+    Object.assign(state.config, savedConfig);
+  } catch (e) {}
+  try {
+    var savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEYS.DOCS) || "{}");
+    if (savedDocs && savedDocs.docs && savedDocs.chunks) {
+      state.docs = savedDocs.docs;
+      state.chunks = savedDocs.chunks;
+    }
+  } catch (e) {}
+} else {
+  state.docs = EMBEDDED.docs || [];
+  state.chunks = EMBEDDED.chunks || [];
+  if (EMBEDDED.config) {
+    Object.assign(state.config, EMBEDDED.config);
+  }
+  try {
+    var localOverride = JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG) || "{}");
+    Object.assign(state.config, localOverride);
+  } catch (e) {}
+}
+
+// ============================================================
+// 4. REFERENCIAS DOM
+// ============================================================
+function $(id) { return document.getElementById(id); }
+
+var els = {};
+var elIds = [
+  "modeBanner", "apiKey", "saveKey", "keyStatus", "helpLink", "helpModal", "closeHelp",
+  "model", "adminUploadZone", "userReadonlyNotice", "readonlyBadge",
+  "dropzone", "pickFiles", "pickFolder", "fileInput", "folderInput",
+  "docList", "docCount", "stats", "statDocs", "statChunks",
+  "exportSection", "exportBtn", "contextMeta", "messages",
+  "userInput", "sendBtn", "status", "clearChat", "resetAll", "toast",
+  "statusDot", "statusText", "headerLogo", "headerOrg", "headerSub",
+  "uploadLogo", "removeLogo", "logoInput", "logoPreview",
+  "orgName", "orgUnit", "loadingOverlay", "loadingText"
+];
+for (var i = 0; i < elIds.length; i++) {
+  els[elIds[i]] = $(elIds[i]);
+}
+
+// ============================================================
+// 5. UTILIDADES
+// ============================================================
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, function(c) {
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];
+  });
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/'/g, "&#39;");
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function toast(msg, isWarn, type) {
+  els.toast.textContent = msg;
+  var cls = "toast show";
+  if (isWarn) cls += " warn";
+  else if (type === "ok") cls += " ok";
+  els.toast.className = cls;
+  setTimeout(function() {
+    els.toast.className = "toast" + (isWarn ? " warn" : (type === "ok" ? " ok" : ""));
+  }, 2400);
+}
+
+function showLoading(text) {
+  els.loadingText.textContent = text || "Procesando…";
+  els.loadingOverlay.classList.add("show");
+}
+
+function hideLoading() {
+  els.loadingOverlay.classList.remove("show");
+}
+
+// ============================================================
+// 6. PERSISTENCIA
+// ============================================================
+function saveDocs() {
+  if (!IS_ADMIN) return;
+  try {
+    localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify({
+      docs: state.docs, chunks: state.chunks
+    }));
+  } catch (e) {
+    toast("Espacio local lleno. Quita algún documento.", true);
+  }
+}
+
+function saveMessages() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CHAT, JSON.stringify(state.messages));
+  } catch (e) {}
+}
+
+function saveConfig() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(state.config));
+  } catch (e) {}
+}
+
+// ============================================================
+// 7. CHUNKING
+// ============================================================
+function chunkText(text, docId, docName) {
+  var cleaned = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  var paragraphs = cleaned.split(/\n\n+/).map(function(p) { return p.trim(); }).filter(Boolean);
+  var chunks = [];
+  var current = [];
+  var currentWords = 0;
+  var idx = 0;
+
+  function flush() {
+    if (current.length === 0) return;
+    chunks.push({ docId: docId, docName: docName, idx: idx, text: current.join("\n\n") });
+    idx++;
+    var lastText = current[current.length - 1];
+    var lastWords = lastText.split(/\s+/);
+    if (lastWords.length > CHUNK_OVERLAP) {
+      current = [lastWords.slice(-CHUNK_OVERLAP).join(" ")];
+      currentWords = CHUNK_OVERLAP;
+    } else {
+      current = [];
+      currentWords = 0;
+    }
+  }
+
+  for (var i = 0; i < paragraphs.length; i++) {
+    var p = paragraphs[i];
+    var words = p.split(/\s+/).length;
+    if (currentWords + words > CHUNK_SIZE && current.length > 0) flush();
+    if (words > CHUNK_SIZE * 1.5) {
+      var allWords = p.split(/\s+/);
+      for (var j = 0; j < allWords.length; j += CHUNK_SIZE) {
+        chunks.push({
+          docId: docId, docName: docName, idx: idx,
+          text: allWords.slice(j, j + CHUNK_SIZE).join(" ")
+        });
+        idx++;
+      }
+      current = [];
+      currentWords = 0;
+    } else {
+      current.push(p);
+      currentWords += words;
+    }
+  }
+  flush();
+  return chunks;
+}
+
+// ============================================================
+// 8. BÚSQUEDA
+// ============================================================
+var STOPWORDS = ["a","de","la","el","los","las","un","una","y","o","que","del","al","se","su","sus","con","por","para","en","sin","sobre","es","son","ser","esta","están","ha","han","haber","hay","si","no","ni","como","cuando","donde","muy","más","menos"];
+var STOPSET = {};
+for (var sw = 0; sw < STOPWORDS.length; sw++) STOPSET[STOPWORDS[sw]] = true;
+
+function normalize(s) {
+  return s.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9ñ\s]/g, " ")
+    .replace(/\s+/g, " ").trim();
+}
+
+function tokenize(s) {
+  return normalize(s).split(" ").filter(function(w) {
+    return w.length > 2 && !STOPSET[w];
+  });
+}
+
+function scoreChunk(text, queryTokens, queryNorm) {
+  var t = normalize(text);
+  var score = 0;
+  if (queryNorm.length > 5 && t.indexOf(queryNorm) !== -1) score += 50;
+  for (var i = 0; i < queryTokens.length; i++) {
+    var tok = queryTokens[i];
+    if (!tok) continue;
+    var escaped = tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var regex = new RegExp("\\b" + escaped + "\\b", "g");
+    var matches = (t.match(regex) || []).length;
+    score += matches * 3;
+    if (matches === 0 && t.indexOf(tok) !== -1) score += 1;
+  }
+  return score;
+}
+
+function searchChunks(query, k) {
+  if (state.chunks.length === 0) return [];
+  var qn = normalize(query);
+  var qt = tokenize(query);
+  if (qt.length === 0) return [];
+  var scored = [];
+  for (var i = 0; i < state.chunks.length; i++) {
+    var s = scoreChunk(state.chunks[i].text, qt, qn);
+    if (s > 0) scored.push({ chunk: state.chunks[i], score: s });
+  }
+  scored.sort(function(a, b) { return b.score - a.score; });
+  return scored.slice(0, k || TOP_K).map(function(x) { return x.chunk; });
+}
+
+// ============================================================
+// 9. LECTURA DE FICHEROS
+// ============================================================
+function readFile(file) {
+  var ext = file.name.split(".").pop().toLowerCase();
+  if (ext === "pdf") return readPdf(file);
+  if (ext === "docx") return readDocx(file);
+  if (ext === "txt" || ext === "md" || ext === "markdown") return file.text();
+  return Promise.reject(new Error("Formato no soportado: ." + ext));
+}
+
+function readPdf(file) {
+  if (!window.pdfjsLib) return Promise.reject(new Error("Librería PDF no cargada"));
+  return file.arrayBuffer().then(function(buf) {
+    return window.pdfjsLib.getDocument({ data: buf }).promise;
+  }).then(function(pdf) {
+    var promises = [];
+    for (var i = 1; i <= pdf.numPages; i++) {
+      promises.push(pdf.getPage(i).then(function(page) {
+        var pageNum = page.pageNumber;
+        return page.getTextContent().then(function(content) {
+          var items = content.items.map(function(it) { return it.str; });
+          return "\n[Página " + pageNum + "]\n" + items.join(" ") + "\n";
+        });
+      }));
+    }
+    return Promise.all(promises).then(function(parts) { return parts.join(""); });
+  });
+}
+
+function readDocx(file) {
+  if (!window.mammoth) return Promise.reject(new Error("Librería Word no cargada"));
+  return file.arrayBuffer().then(function(buf) {
+    return window.mammoth.extractRawText({ arrayBuffer: buf });
+  }).then(function(result) {
+    return result.value || "";
+  });
+}
+
+// ============================================================
+// 10. CARGA DE FICHEROS
+// ============================================================
+function handleFiles(files) {
+  if (!IS_ADMIN) return;
+  var filtered = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    var ext = (f.name.split(".").pop() || "").toLowerCase();
+    if (VALID_EXT.indexOf(ext) !== -1 && !f.name.startsWith(".") && !f.name.startsWith("~")) {
+      filtered.push(f);
+    }
+  }
+  if (filtered.length === 0) {
+    toast("No se han encontrado archivos válidos", true);
+    return;
+  }
+  if (filtered.length < files.length) {
+    toast("Procesando " + filtered.length + " archivos · " + (files.length - filtered.length) + " descartados");
+  }
+  showLoading("Procesando 0/" + filtered.length + "…");
+
+  var added = 0;
+  var idx = 0;
+
+  function next() {
+    if (idx >= filtered.length) {
+      hideLoading();
+      saveDocs();
+      renderDocs();
+      updateContextMeta();
+      updateGlobalStatus();
+      if (added > 0) {
+        toast(added + " documento(s) indexado(s)", false, "ok");
+        if (state.messages.length === 0) renderMessages();
+      } else {
+        toast("Ningún archivo aportó texto extraíble", true);
+      }
+      return;
+    }
+    var f = filtered[idx];
+    els.loadingText.textContent = "Procesando " + (idx + 1) + "/" + filtered.length + ": " + f.name.slice(0, 40);
+
+    var dup = false;
+    for (var k = 0; k < state.docs.length; k++) {
+      if (state.docs[k].name === f.name && state.docs[k].size === f.size) { dup = true; break; }
+    }
+    if (dup) { idx++; next(); return; }
+
+    readFile(f).then(function(content) {
+      if (content && content.trim()) {
+        var id = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+        var docChunks = chunkText(content, id, f.name);
+        state.docs.push({ id: id, name: f.name, size: f.size, numChunks: docChunks.length });
+        state.chunks = state.chunks.concat(docChunks);
+        added++;
+      }
+      idx++;
+      next();
+    }).catch(function(err) {
+      console.error("Error con", f.name, err);
+      toast("Error con " + f.name + ": " + err.message, true);
+      idx++;
+      next();
+    });
+  }
+  next();
+}
+
+function removeDoc(id) {
+  if (!IS_ADMIN) return;
+  state.docs = state.docs.filter(function(d) { return d.id !== id; });
+  state.chunks = state.chunks.filter(function(c) { return c.docId !== id; });
+  saveDocs();
+  renderDocs();
+  updateContextMeta();
+  updateGlobalStatus();
+  if (state.messages.length === 0) renderMessages();
+}
+
+// ============================================================
+// 11. RENDER
+// ============================================================
+function renderDocs() {
+  els.docList.innerHTML = "";
+  for (var i = 0; i < state.docs.length; i++) {
+    (function(d) {
+      var div = document.createElement("div");
+      div.className = "doc-item";
+      var iconHtml = '<svg class="doc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+      var nameHtml = '<span class="doc-name" title="' + escapeAttr(d.name) + '">' + escapeHtml(d.name) + '</span>';
+      var sizeHtml = '<span class="doc-size">' + formatSize(d.size) + '</span>';
+      var btnHtml = IS_ADMIN
+        ? '<button class="doc-remove" title="Quitar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>'
+        : "";
+      div.innerHTML = iconHtml + nameHtml + sizeHtml + btnHtml;
+      if (IS_ADMIN) {
+        div.querySelector(".doc-remove").addEventListener("click", function() { removeDoc(d.id); });
+      }
+      els.docList.appendChild(div);
+    })(state.docs[i]);
+  }
+  els.docCount.textContent = state.docs.length || "";
+  if (state.docs.length) {
+    els.stats.style.display = "grid";
+    els.statDocs.textContent = state.docs.length;
+    els.statChunks.textContent = state.chunks.length.toLocaleString("es-ES");
+  } else {
+    els.stats.style.display = "none";
+  }
+}
+
+function updateContextMeta() {
+  if (!state.docs.length) {
+    els.contextMeta.textContent = "Sin documentos cargados";
+    return;
+  }
+  els.contextMeta.textContent = state.docs.length + " documento(s) · " +
+    state.chunks.length.toLocaleString("es-ES") + " fragmentos · búsqueda inteligente activa";
+}
+
+function updateGlobalStatus() {
+  if (!state.apiKey) {
+    els.statusDot.className = "status-dot warn";
+    els.statusText.textContent = "Falta clave de API";
+  } else if (state.docs.length === 0) {
+    els.statusDot.className = "status-dot warn";
+    els.statusText.textContent = "Sin documentación";
+  } else {
+    els.statusDot.className = "status-dot ok";
+    els.statusText.textContent = "Listo · " + state.docs.length + " doc(s)";
+  }
+}
+
+function applyConfig() {
+  if (state.config.logo) {
+    els.headerLogo.classList.add("has-image");
+    els.headerLogo.innerHTML = '<img src="' + state.config.logo + '" alt="Logo">';
+    els.logoPreview.innerHTML = '<img src="' + state.config.logo + '">';
+    els.removeLogo.style.display = "inline-flex";
+  } else {
+    els.headerLogo.classList.remove("has-image");
+    els.headerLogo.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4z"/></svg>';
+    els.logoPreview.innerHTML = "sin logo";
+    els.removeLogo.style.display = "none";
+  }
+  els.headerOrg.textContent = state.config.org || DEFAULT_ORG;
+  els.orgName.value = state.config.org === DEFAULT_ORG ? "" : (state.config.org || "");
+  els.orgUnit.value = state.config.orgUnit || "";
+  els.headerSub.textContent = state.config.orgUnit
+    ? state.config.orgUnit + " · IA: Google Gemini"
+    : "Servicio Canario de la Salud · IA: Google Gemini";
+}
+
+function setupModeUI() {
+  els.modeBanner.style.display = "block";
+  if (IS_ADMIN) {
+    els.modeBanner.className = "mode-banner admin";
+    els.modeBanner.innerHTML = "🛠 <b>MODO ADMINISTRADOR</b> — Tu documentación se guarda en este navegador.";
+    els.adminUploadZone.style.display = "flex";
+    els.userReadonlyNotice.style.display = "none";
+    els.readonlyBadge.style.display = "none";
+    els.exportSection.style.display = "block";
+  } else {
+    els.modeBanner.className = "mode-banner user";
+    var v = (EMBEDDED && EMBEDDED.version) ? " · Versión: " + EMBEDDED.version : "";
+    els.modeBanner.innerHTML = "📋 <b>VERSIÓN DEL EQUIPO</b> — Documentación oficial precargada" + v;
+    els.adminUploadZone.style.display = "none";
+    els.userReadonlyNotice.style.display = "block";
+    els.readonlyBadge.style.display = "inline-block";
+    els.exportSection.style.display = "none";
+  }
+}
+
+function renderMessages() {
+  els.messages.innerHTML = "";
+  if (state.messages.length === 0) {
+    var hasKey = !!state.apiKey;
+    var hasDocs = state.docs.length > 0;
+
+    var stepDocsBody;
+    if (IS_ADMIN) {
+      stepDocsBody = "<strong>Carga la documentación</strong><span>Arrastra los PDFs/Word del SCS al panel izquierdo.</span>";
+    } else {
+      stepDocsBody = "<strong>Documentación cargada</strong><span>El administrador ya cargó la documentación. No tienes que hacer nada en este paso.</span>";
+    }
+    var docsDone = IS_ADMIN ? hasDocs : true;
+
+    var html = '<div class="empty-state"><div class="welcome-card">' +
+      '<div class="welcome-eyebrow">' + (IS_ADMIN ? "Configuración" : "Bienvenido") + '</div>' +
+      '<h2 class="welcome-title">' + (IS_ADMIN ? "Configura el asistente" : "Asistente normativo del SCS") + '</h2>' +
+      '<p class="welcome-intro">Resuelve dudas sobre carrera profesional del SCS con la documentación oficial. Cada respuesta cita su fuente.</p>' +
+      '<div class="steps">' +
+        '<div class="step ' + (hasKey ? "done" : "") + '"><div class="step-num">1</div><div class="step-body"><strong>Configura tu clave gratuita</strong><span>Pulsa "conseguir clave gratis" en el panel izquierdo.</span></div></div>' +
+        '<div class="step ' + (docsDone ? "done" : "") + '"><div class="step-num">2</div><div class="step-body">' + stepDocsBody + '</div></div>' +
+        '<div class="step"><div class="step-num">3</div><div class="step-body"><strong>Pregunta lo que necesites</strong><span>El asistente solo usa la documentación cargada y cita la fuente.</span></div></div>' +
+      '</div>';
+
+    if (hasDocs) {
+      html += '<div class="examples-block"><div class="examples-title">Preguntas para empezar</div><div class="examples">' +
+        '<div class="example" data-q="¿Qué documentos hay disponibles y de qué tratan?">¿Qué documentos hay disponibles?</div>' +
+        '<div class="example" data-q="¿Cuáles son los requisitos de antigüedad para acceder a cada grado de carrera profesional?">Requisitos de antigüedad por grado</div>' +
+        '<div class="example" data-q="¿Hay instrucciones contradictorias o normativa derogada parcialmente?">¿Hay normativa contradictoria?</div>' +
+        '</div></div>';
+    }
+    html += '</div></div>';
+    els.messages.innerHTML = html;
+
+    var examples = document.querySelectorAll(".example");
+    for (var i = 0; i < examples.length; i++) {
+      examples[i].addEventListener("click", function() {
+        els.userInput.value = this.dataset.q;
+        els.userInput.focus();
+        autoresize();
+      });
+    }
+    return;
+  }
+
+  for (var i = 0; i < state.messages.length; i++) {
+    appendMsg(state.messages[i], false);
+  }
+  scrollToBottom();
+}
+
+function appendMsg(m, animate) {
+  var div = document.createElement("div");
+  div.className = "msg msg-" + m.role;
+  var role = m.role === "user" ? "TÚ" : (m.role === "assistant" ? "ASISTENTE" : "ERROR");
+  var content = m.role === "user" ? escapeHtml(m.content) : renderMarkdown(m.content);
+  var html = '<div class="msg-role">' + role + '</div><div class="msg-content">' + content + '</div>';
+
+  if (m.sources && m.sources.length) {
+    var tags = "";
+    for (var i = 0; i < m.sources.length; i++) {
+      tags += '<span class="source-tag">' + escapeHtml(m.sources[i]) + '</span>';
+    }
+    html += '<div class="sources"><div class="sources-title">Fuentes consultadas</div><div class="sources-list">' + tags + '</div></div>';
+  }
+
+  div.innerHTML = html;
+  els.messages.appendChild(div);
+  if (animate !== false) scrollToBottom();
+  return div;
+}
+
+function scrollToBottom() {
+  els.messages.scrollTop = els.messages.scrollHeight;
+}
+
+function renderMarkdown(text) {
+  var html = escapeHtml(text);
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  var lines = html.split("\n");
+  var out = [];
+  var inList = false;
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i];
+    var ulMatch = l.match(/^[\-•]\s+(.+)/);
+    var olMatch = l.match(/^\d+\.\s+(.+)/);
+    if (ulMatch || olMatch) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push("<li>" + (ulMatch ? ulMatch[1] : olMatch[1]) + "</li>");
+    } else {
+      if (inList) { out.push("</ul>"); inList = false; }
+      if (l.trim() === "") out.push("");
+      else out.push("<p>" + l + "</p>");
+    }
+  }
+  if (inList) out.push("</ul>");
+  return out.join("\n");
+}
+
+// ============================================================
+// 12. LLAMADA A GEMINI
+// ============================================================
+function buildSystemPrompt(retrievedChunks) {
+  var docContext = "(No se han encontrado fragmentos relevantes para esta consulta.)";
+  if (retrievedChunks.length > 0) {
+    var parts = [];
+    for (var i = 0; i < retrievedChunks.length; i++) {
+      var c = retrievedChunks[i];
+      parts.push("=== FRAGMENTO " + (i+1) + " · Documento: " + c.docName + " ===\n" + c.text);
+    }
+    docContext = parts.join("\n\n");
+  }
+  var orgName = state.config.org || DEFAULT_ORG;
+  var orgUnit = state.config.orgUnit || "";
+
+  return "Eres un asistente especializado en procedimientos de carrera profesional del Servicio Canario de la Salud (SCS), atendiendo al equipo gestor del " + orgName + (orgUnit ? ", " + orgUnit : "") + ".\n\n" +
+    "REGLAS ESTRICTAS:\n" +
+    "1. Responde EXCLUSIVAMENTE con información presente en los FRAGMENTOS DOCUMENTALES recuperados.\n" +
+    "2. CITA SIEMPRE LA FUENTE: nombre del documento y página o apartado. Formato: (Documento: nombre.pdf, página X).\n" +
+    "3. Si la información NO está en los fragmentos, di literalmente: \"No encuentro esta información en los fragmentos relevantes recuperados.\" y sugiere reformular con términos más específicos.\n" +
+    "4. Si detectas CONTRADICCIONES o normativa modificada/derogada, señálalo en una sección \"⚠ Avisos\" al final.\n" +
+    "5. Da preferencia a las FAQs internas o documentos del equipo gestor cuando exista interpretación oficial.\n" +
+    "6. Para fechas, plazos, cuantías y porcentajes sé especialmente preciso y cita literalmente.\n" +
+    "7. Responde siempre en español, profesional, claro y conciso.\n\n" +
+    "==================== FRAGMENTOS RECUPERADOS ====================\n" +
+    docContext + "\n" +
+    "==================== FIN ====================";
+}
+
+function callGemini(userMessage) {
+  var relevantChunks = searchChunks(userMessage, TOP_K);
+  var sourcesSet = {};
+  for (var i = 0; i < relevantChunks.length; i++) sourcesSet[relevantChunks[i].docName] = true;
+  var sources = Object.keys(sourcesSet);
+
+  var recentMessages = state.messages.slice(-10).filter(function(m) {
+    return m.role === "user" || m.role === "assistant";
+  });
+  var apiContents = recentMessages.map(function(m) {
+    return {
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }]
+    };
+  });
+  apiContents.push({ role: "user", parts: [{ text: userMessage }] });
+
+  var body = {
+    system_instruction: { parts: [{ text: buildSystemPrompt(relevantChunks) }] },
+    contents: apiContents,
+    generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+  };
+
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/" + state.model + ":generateContent";
+
+  return fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": state.apiKey },
+    body: JSON.stringify(body)
+  }).then(function(res) {
+    if (!res.ok) {
+      return res.json().catch(function() { return {}; }).then(function(j) {
+        var msg = (j && j.error && j.error.message) || ("HTTP " + res.status);
+        if (res.status === 400 && /API key/i.test(msg)) msg = "Clave inválida. Revisa que la has copiado completa.";
+        if (res.status === 401 || res.status === 403) msg = "Clave inválida o sin permisos.";
+        if (res.status === 429) msg = "Cuota gratuita superada. Espera unos minutos o cambia a Flash-Lite.";
+        throw new Error(msg);
+      });
+    }
+    return res.json();
+  }).then(function(data) {
+    if (data.promptFeedback && data.promptFeedback.blockReason) {
+      throw new Error("Bloqueado por filtros: " + data.promptFeedback.blockReason);
+    }
+    var candidate = data.candidates && data.candidates[0];
+    if (!candidate) return { text: "(respuesta vacía)", sources: sources };
+    if (candidate.finishReason === "SAFETY") {
+      throw new Error("Respuesta bloqueada por filtros de seguridad.");
+    }
+    var parts = (candidate.content && candidate.content.parts) || [];
+    var text = parts.map(function(p) { return p.text || ""; }).join("\n").trim();
+    return { text: text || "(respuesta vacía)", sources: sources };
+  });
+}
+
+// ============================================================
+// 13. ENVIAR MENSAJE
+// ============================================================
+function send() {
+  var text = els.userInput.value.trim();
+  if (!text || state.loading) return;
+  if (!state.apiKey) {
+    toast("Configura primero tu clave de API", true);
+    return;
+  }
+  if (!state.docs.length) {
+    if (!confirm("No hay documentos cargados. ¿Enviar igualmente?")) return;
+  }
+
+  state.loading = true;
+  els.sendBtn.disabled = true;
+  els.userInput.value = "";
+  autoresize();
+
+  var userMsg = { role: "user", content: text };
+  state.messages.push(userMsg);
+  if (state.messages.length === 1) renderMessages();
+  else appendMsg(userMsg);
+  saveMessages();
+
+  var typing = document.createElement("div");
+  typing.className = "msg msg-assistant";
+  typing.innerHTML = '<div class="msg-role">ASISTENTE</div><div class="msg-content"><div class="typing"><span></span><span></span><span></span></div></div>';
+  els.messages.appendChild(typing);
+  scrollToBottom();
+  els.status.textContent = "Buscando en documentos…";
+
+  callGemini(text).then(function(result) {
+    typing.remove();
+    var assistantMsg = { role: "assistant", content: result.text, sources: result.sources };
+    state.messages.push(assistantMsg);
+    appendMsg(assistantMsg);
+    saveMessages();
+    els.status.textContent = "";
+  }).catch(function(err) {
+    typing.remove();
+    console.error(err);
+    var errMsg = { role: "error", content: "Error: " + err.message };
+    state.messages.push(errMsg);
+    appendMsg(errMsg);
+    saveMessages();
+    els.status.textContent = "";
+  }).finally(function() {
+    state.loading = false;
+    els.sendBtn.disabled = false;
+    els.userInput.focus();
+  });
+}
+
+// ============================================================
+// 14. EXPORTACIÓN (admin)
+// ============================================================
+function exportTeamVersion() {
+  if (!IS_ADMIN) return;
+  if (state.docs.length === 0) {
+    toast("Carga primero al menos un documento", true);
+    return;
+  }
+  showLoading("Generando archivo del equipo…");
+  try {
+    var d = new Date();
+    var dateLabel = d.getDate() + "/" + (d.getMonth()+1) + "/" + d.getFullYear();
+    var payload = {
+      version: dateLabel,
+      docs: state.docs,
+      chunks: state.chunks,
+      config: state.config
+    };
+    var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    var dataJson = JSON.stringify(payload).replace(/<\/script>/g, "<\\/script>");
+    html = html.replace(
+      /<script id="embedded-data" type="application\/json">[^<]*<\/script>/,
+      '<script id="embedded-data" type="application/json">' + dataJson + '<\/script>'
+    );
+    var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    var dateStr = d.toISOString().slice(0, 10);
+    a.download = "asistente-scs-equipo-" + dateStr + ".html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    hideLoading();
+    var sizeMB = (blob.size / (1024*1024)).toFixed(1);
+    toast("Archivo generado (" + sizeMB + " MB)", false, "ok");
+  } catch (err) {
+    hideLoading();
+    console.error(err);
+    toast("Error al exportar: " + err.message, true);
+  }
+}
+
+// ============================================================
+// 15. AUTORESIZE TEXTAREA
+// ============================================================
+function autoresize() {
+  els.userInput.style.height = "auto";
+  els.userInput.style.height = Math.min(els.userInput.scrollHeight, 200) + "px";
+}
+
+// ============================================================
+// 16. EVENT LISTENERS
+// ============================================================
+els.saveKey.addEventListener("click", function() {
+  var v = els.apiKey.value.trim();
+  if (!v || v.charAt(0) === "•") {
+    toast("Pega tu clave de API", true);
+    return;
+  }
+  if (v.indexOf("AIza") !== 0) {
+    toast("La clave debería empezar por AIzaSy", true);
+    return;
+  }
+  state.apiKey = v;
+  localStorage.setItem(STORAGE_KEYS.API_KEY, v);
+  els.apiKey.value = "••••••••" + v.slice(-6);
+  els.keyStatus.textContent = "Configurada · clave guardada localmente.";
+  els.keyStatus.className = "field-help ok";
+  toast("Clave guardada", false, "ok");
+  updateGlobalStatus();
+  renderMessages();
+});
+
+els.apiKey.addEventListener("focus", function() {
+  if (els.apiKey.value.charAt(0) === "•") els.apiKey.value = "";
+});
+
+els.model.addEventListener("change", function() {
+  state.model = els.model.value;
+  localStorage.setItem(STORAGE_KEYS.MODEL, state.model);
+});
+
+els.helpLink.addEventListener("click", function(e) {
+  e.preventDefault();
+  els.helpModal.classList.add("open");
+});
+els.closeHelp.addEventListener("click", function() {
+  els.helpModal.classList.remove("open");
+});
+els.helpModal.addEventListener("click", function(e) {
+  if (e.target === els.helpModal) els.helpModal.classList.remove("open");
+});
+
+if (IS_ADMIN) {
+  els.pickFiles.addEventListener("click", function() { els.fileInput.click(); });
+  els.pickFolder.addEventListener("click", function() { els.folderInput.click(); });
+  els.dropzone.addEventListener("click", function() { els.fileInput.click(); });
+  els.fileInput.addEventListener("change", function(e) {
+    handleFiles(Array.prototype.slice.call(e.target.files));
+  });
+  els.folderInput.addEventListener("change", function(e) {
+    handleFiles(Array.prototype.slice.call(e.target.files));
+  });
+
+  els.dropzone.addEventListener("dragenter", function(e) {
+    e.preventDefault();
+    els.dropzone.classList.add("drag");
+  });
+  els.dropzone.addEventListener("dragover", function(e) {
+    e.preventDefault();
+    els.dropzone.classList.add("drag");
+  });
+  els.dropzone.addEventListener("dragleave", function(e) {
+    e.preventDefault();
+    els.dropzone.classList.remove("drag");
+  });
+  els.dropzone.addEventListener("drop", function(e) {
+    e.preventDefault();
+    els.dropzone.classList.remove("drag");
+    if (!e.dataTransfer) return;
+    var items = e.dataTransfer.items;
+    var collected = [];
+    if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === "function") {
+      var promises = [];
+      for (var i = 0; i < items.length; i++) {
+        var entry = items[i].webkitGetAsEntry();
+        if (entry) promises.push(collectFiles(entry, collected));
+      }
+      Promise.all(promises).then(function() {
+        if (collected.length === 0 && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          collected = Array.prototype.slice.call(e.dataTransfer.files);
+        }
+        if (collected.length === 0) toast("No se ha podido leer la selección", true);
+        else handleFiles(collected);
+      });
+    } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(Array.prototype.slice.call(e.dataTransfer.files));
+    }
+  });
+
+  els.exportBtn.addEventListener("click", exportTeamVersion);
+}
+
+function collectFiles(entry, out) {
+  return new Promise(function(resolve) {
+    if (entry.isFile) {
+      entry.file(function(f) { out.push(f); resolve(); }, function() { resolve(); });
+    } else if (entry.isDirectory) {
+      var reader = entry.createReader();
+      function readBatch() {
+        reader.readEntries(function(entries) {
+          if (entries.length === 0) { resolve(); return; }
+          var subPromises = [];
+          for (var i = 0; i < entries.length; i++) {
+            subPromises.push(collectFiles(entries[i], out));
+          }
+          Promise.all(subPromises).then(readBatch);
+        }, function() { resolve(); });
+      }
+      readBatch();
+    } else {
+      resolve();
+    }
+  });
+}
+
+els.userInput.addEventListener("input", autoresize);
+els.userInput.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+els.sendBtn.addEventListener("click", send);
+
+els.uploadLogo.addEventListener("click", function() { els.logoInput.click(); });
+els.logoInput.addEventListener("change", function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 500 * 1024) {
+    toast("Imagen demasiado grande (máx. 500 KB)", true);
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function() {
+    state.config.logo = reader.result;
+    saveConfig();
+    applyConfig();
+    toast("Logotipo cargado", false, "ok");
+  };
+  reader.readAsDataURL(file);
+  els.logoInput.value = "";
+});
+
+els.removeLogo.addEventListener("click", function() {
+  state.config.logo = "";
+  saveConfig();
+  applyConfig();
+});
+
+els.orgName.addEventListener("input", function() {
+  state.config.org = els.orgName.value.trim() || DEFAULT_ORG;
+  saveConfig();
+  applyConfig();
+});
+
+els.orgUnit.addEventListener("input", function() {
+  state.config.orgUnit = els.orgUnit.value.trim();
+  saveConfig();
+  applyConfig();
+});
+
+els.clearChat.addEventListener("click", function() {
+  if (state.messages.length === 0) return;
+  if (!confirm("¿Borrar la conversación?")) return;
+  state.messages = [];
+  saveMessages();
+  renderMessages();
+});
+
+els.resetAll.addEventListener("click", function() {
+  var msg = IS_ADMIN
+    ? "¿Borrar TODOS los documentos cargados, la clave API y la conversación?"
+    : "¿Borrar tu clave API y la conversación?";
+  if (!confirm(msg)) return;
+  for (var key in STORAGE_KEYS) {
+    localStorage.removeItem(STORAGE_KEYS[key]);
+  }
+  state.apiKey = "";
+  state.messages = [];
+  if (IS_ADMIN) {
+    state.docs = [];
+    state.chunks = [];
+    state.config = { org: DEFAULT_ORG, orgUnit: "", logo: "" };
+  }
+  els.apiKey.value = "";
+  els.keyStatus.textContent = "No configurada · clave gratuita de Google AI Studio.";
+  els.keyStatus.className = "field-help";
+  applyConfig();
+  renderDocs();
+  renderMessages();
+  updateContextMeta();
+  updateGlobalStatus();
+  toast("Datos borrados", false, "ok");
+});
+
+// ============================================================
+// 17. INICIALIZACIÓN
+// ============================================================
+function init() {
+  setupModeUI();
+  if (state.apiKey) {
+    els.apiKey.value = "••••••••" + state.apiKey.slice(-6);
+    els.keyStatus.textContent = "Configurada · clave guardada localmente.";
+    els.keyStatus.className = "field-help ok";
+  }
+  els.model.value = state.model;
+  applyConfig();
+  renderDocs();
+  renderMessages();
+  updateContextMeta();
+  updateGlobalStatus();
+}
+
+init();
+</script>
+</body>
+</html>
